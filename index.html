@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>おはなしさんすう</title>
+<style>
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0; padding:0;}
+body{
+  font-family:"Hiragino Maru Gothic ProN","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+  background:#fdf6e3; color:#333; touch-action:manipulation; user-select:none; -webkit-user-select:none;
+}
+header{display:flex; align-items:center; gap:10px; padding:10px 14px; background:#4aa8dd; color:#fff; position:sticky; top:0; z-index:10;}
+header h1{font-size:22px; margin:0; flex:1; text-align:center; letter-spacing:2px;}
+#stars{font-size:18px; background:rgba(255,255,255,.25); padding:5px 14px; border-radius:999px; white-space:nowrap;}
+.hbtn{border:none; background:#fff; color:#2a7fb5; font-size:15px; padding:8px 14px; border-radius:999px; cursor:pointer; font-family:inherit; box-shadow:0 2px 0 rgba(0,0,0,.15); white-space:nowrap;}
+.hbtn:active{transform:translateY(2px); box-shadow:none;}
+.screen{max-width:880px; margin:0 auto; padding:14px 14px 60px;}
+.hidden{display:none !important;}
+.lead{text-align:center; font-size:22px; margin:26px 0 10px;}
+
+/* ---- home cards ---- */
+.cards{display:flex; gap:20px; justify-content:center; flex-wrap:wrap; margin-top:20px;}
+.card{width:340px; min-height:210px; border:none; border-radius:24px; background:#fff; cursor:pointer;
+  box-shadow:0 6px 0 #e3d9bd; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;
+  font-family:inherit; transition:transform .1s;}
+.card:active{transform:scale(.97);}
+.card .big{font-size:30px; font-weight:bold; color:#2a7fb5;}
+.card .emoji{font-size:44px;}
+.card .desc{font-size:17px; color:#666; padding:0 16px; line-height:1.6;}
+.card.c2 .big{color:#e07a2f;}
+
+/* ---- toolbar chips ---- */
+.toolbar{display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:center; margin-bottom:12px;}
+.chip{border:3px solid #cbd8e0; background:#fff; border-radius:999px; padding:9px 16px; font-size:17px;
+  font-family:inherit; cursor:pointer; color:#555;}
+.chip.sel{border-color:#ff8fab; background:#ffe6ee; color:#d23369; font-weight:bold;}
+.chip.new{border-color:#4aa8dd; color:#2a7fb5; background:#eaf6ff;}
+.chip:active{transform:scale(.95);}
+.tlabel{font-size:15px; color:#888; margin-left:6px;}
+
+/* ---- scene (grade1) ---- */
+.scene{position:relative; width:100%; height:min(48vw,400px); min-height:280px; border-radius:20px; overflow:hidden;
+  background:linear-gradient(180deg,#bfe6ff 0%,#bfe6ff 25%,#4aa8dd 25%,#3d9fd6 48%,#8ed8ea 48%,#ffe49a 51%,#ffdf8e 100%);
+  box-shadow:0 4px 0 #e3d9bd;}
+.itm{position:absolute; background:none; border:none; cursor:pointer; padding:2px; line-height:1;
+  transition:transform .12s; transform-origin:center;}
+.itm:active{transform:scale(.85);}
+.itm .em{display:block;}
+.itm .badge{display:none; position:absolute; top:-10px; right:-10px; width:24px; height:24px; border-radius:50%;
+  background:#ff5c8a; color:#fff; font-size:14px; font-weight:bold; align-items:center; justify-content:center;
+  box-shadow:0 1px 3px rgba(0,0,0,.3); z-index:2;}
+.itm.counted .badge{display:flex;}
+.itm.counted .em{filter:drop-shadow(0 0 6px #ffd900);}
+.itm .hole{position:absolute; bottom:-8px; left:50%; transform:translateX(-50%); font-size:26px; z-index:-1; opacity:.9;}
+.itm .puff{position:absolute; right:-16px; bottom:-2px; font-size:16px;}
+.deco{position:absolute; pointer-events:none; line-height:1;}
+.hint{text-align:center; color:#888; font-size:15px; margin:8px 0 14px;}
+.hint.small{font-size:13px; margin:6px 0;}
+
+/* ---- panels & bubble ---- */
+.panel{background:#fff; border-radius:20px; padding:16px 18px; margin:0 0 16px; box-shadow:0 4px 0 #e3d9bd;}
+.panel h2{font-size:19px; margin:0 0 12px; color:#2a7fb5;}
+.bubble{position:relative; background:#f2f9ff; border:3px solid #bcdcf0; border-radius:16px; padding:14px 52px 14px 16px;}
+.bubble p{margin:0; font-size:22px; line-height:2.2;}
+.speak{position:absolute; top:8px; right:8px; width:40px; height:40px; border-radius:50%; border:none;
+  background:#4aa8dd; color:#fff; font-size:19px; cursor:pointer;}
+.speak:active{transform:scale(.9);}
+
+/* ---- blanks ---- */
+.blank{display:inline-flex; align-items:center; justify-content:center; min-width:52px; height:52px;
+  border:3px dashed #f5a623; border-radius:12px; background:#fffdf5; font-size:28px; font-family:inherit;
+  font-weight:bold; color:#333; cursor:pointer; vertical-align:middle; margin:0 3px; padding:0 6px;}
+.blank:empty::before{content:"▢"; color:#d8c9a0; font-weight:normal;}
+.blank[data-len="2"]{min-width:84px;}
+.blank[data-len="2"]:empty::before{content:"▢▢"; letter-spacing:2px;}
+.blank.active{border-style:solid; border-color:#ff4081; background:#fff0f6; box-shadow:0 0 0 4px #ffd3e2;}
+.blank.ok{border-style:solid; border-color:#2fb46a; background:#e9fbef; color:#1b7d46; cursor:default;}
+.blank.wrong{animation:shake .4s; border-color:#e74c3c; background:#ffecec;}
+@keyframes shake{0%,100%{transform:translateX(0);}20%,60%{transform:translateX(-6px);}40%,80%{transform:translateX(6px);}}
+.ctr{font-size:22px; margin-right:2px;}
+.opsign{font-size:30px; font-weight:bold; margin:0 6px; vertical-align:middle;}
+
+/* ---- shiki row ---- */
+.shiki{display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:4px; font-size:30px; margin:8px 0;}
+.opsel{width:56px; height:56px; border-radius:14px; border:3px solid #cbd8e0; background:#fff; font-size:28px;
+  font-weight:bold; cursor:pointer; color:#888; font-family:inherit;}
+.opsel.sel{border-color:#ff4081; background:#fff0f6; color:#d23369;}
+.opsel.ok{border-color:#2fb46a; background:#e9fbef; color:#1b7d46;}
+.opsel.wrong{animation:shake .4s; border-color:#e74c3c;}
+
+/* ---- check / next buttons ---- */
+.check{display:block; margin:14px auto 0; border:none; background:#ffb400; color:#7a4a00; font-size:19px;
+  font-weight:bold; font-family:inherit; padding:12px 30px; border-radius:999px; cursor:pointer; box-shadow:0 4px 0 #d99a00;}
+.check:active{transform:translateY(3px); box-shadow:0 1px 0 #d99a00;}
+.nextbtn{display:block; margin:16px auto; border:none; background:#2fb46a; color:#fff; font-size:21px; font-weight:bold;
+  font-family:inherit; padding:14px 36px; border-radius:999px; cursor:pointer; box-shadow:0 4px 0 #1b7d46;}
+.nextbtn:active{transform:translateY(3px); box-shadow:0 1px 0 #1b7d46;}
+.answer{text-align:center; font-size:28px; font-weight:bold; color:#d23369; background:#fff0f6;
+  border:3px solid #ffb3cd; border-radius:16px; padding:12px; margin:0 auto 14px; max-width:420px;}
+.feedback{text-align:center; font-size:21px; min-height:32px; margin:6px 0 10px; font-weight:bold;}
+.feedback.good{color:#2fb46a;}
+.feedback.bad{color:#e07a2f;}
+
+/* ---- number pad ---- */
+.pad{display:grid; grid-template-columns:repeat(6,minmax(52px,66px)); gap:8px; justify-content:center; margin:10px 0;}
+.pad button{height:60px; border:none; border-radius:14px; background:#fff; font-size:26px; font-weight:bold;
+  font-family:inherit; cursor:pointer; box-shadow:0 3px 0 #d8cfae; color:#333;}
+.pad button:active{transform:translateY(2px); box-shadow:0 1px 0 #d8cfae;}
+.pad button.del{grid-column:span 2; background:#ffe0e0; color:#c0392b; font-size:19px;}
+
+/* ---- blocks (grade2) ---- */
+.blocks{display:flex; gap:22px; justify-content:center; align-items:flex-end; flex-wrap:wrap; margin-top:14px;}
+.bgroup{display:flex; flex-direction:column; align-items:center; gap:6px;}
+.blabel{font-size:17px; font-weight:bold; color:#555; background:#f5f0e0; border-radius:999px; padding:4px 14px;}
+.brow{display:flex; align-items:flex-end; gap:5px; padding:8px; border-radius:12px; background:#fbf8ee; min-height:110px;}
+.tenbar{width:18px; height:100px; border-radius:4px; border:2px solid rgba(0,0,0,.25);
+  background:repeating-linear-gradient(180deg,var(--bc) 0 8px,rgba(255,255,255,.55) 8px 10px);}
+.onecube{width:18px; height:18px; border-radius:4px; border:2px solid rgba(0,0,0,.25); background:var(--bc);}
+.ones{display:flex; flex-direction:column-reverse; gap:2px;}
+.bplus{font-size:34px; font-weight:bold; color:#888; align-self:center;}
+.bminus{font-size:20px; font-weight:bold; color:#c0392b; background:#ffecec; border:3px dashed #f1a9a0;
+  border-radius:14px; padding:10px 16px; align-self:center;}
+
+/* ---- hissan grid ---- */
+.hs{display:grid; grid-template-columns:44px 64px 64px 64px; gap:5px; justify-content:center; margin:10px auto;}
+.hc{height:60px; display:flex; align-items:center; justify-content:center; font-size:36px; font-weight:bold;}
+.hc.opc{font-size:30px; color:#555;}
+.hs .blank{width:60px; height:60px; min-width:0; margin:0; font-size:30px;}
+.hs .blank.memo{height:38px; width:60px; font-size:19px; border-color:#c9b8d8; background:#faf6ff; align-self:end;}
+.hs .blank.memo:empty::before{content:"メモ"; font-size:12px; color:#c5b3d6; letter-spacing:1px;}
+.hsline{grid-column:1/-1; border-top:5px solid #444; border-radius:3px; margin:3px 0;}
+.memocell{display:flex; align-items:flex-end; justify-content:center;}
+
+/* ---- Erika-sensei overlay ---- */
+.ovl{position:fixed; inset:0; background:rgba(30,50,70,.5); display:flex; align-items:center; justify-content:center; z-index:60; padding:16px;}
+.ovlcard{background:#fff; border-radius:26px; padding:20px 24px 24px; text-align:center; max-width:360px; width:100%;
+  box-shadow:0 10px 30px rgba(0,0,0,.3); animation:pop .45s cubic-bezier(.2,1.4,.4,1);}
+@keyframes pop{from{transform:scale(.5); opacity:0;}}
+.ovlname{font-size:18px; font-weight:bold; color:#2a7fb5; margin:4px 0 0;}
+.ovlmsg{font-size:20px; line-height:1.8; background:#f2f9ff; border:3px solid #bcdcf0; border-radius:16px; padding:12px 14px; margin:12px 0; font-weight:bold;}
+#ovlMedal{margin-top:-74px; position:relative; z-index:2;}
+.medalbig{font-size:80px; line-height:1; display:inline-block; animation:medaldrop .9s cubic-bezier(.3,1.5,.5,1);
+  filter:drop-shadow(0 3px 6px rgba(0,0,0,.25));}
+@keyframes medaldrop{0%{transform:translateY(-140px) scale(.2) rotate(-30deg); opacity:0;}
+  60%{transform:translateY(12px) scale(1.15);}100%{transform:none;}}
+.ovlbtn{border:none; background:#ff8fab; color:#fff; font-size:20px; font-weight:bold; font-family:inherit;
+  padding:12px 34px; border-radius:999px; cursor:pointer; box-shadow:0 4px 0 #d95f80;}
+.ovlbtn:active{transform:translateY(3px); box-shadow:0 1px 0 #d95f80;}
+.erika svg{width:170px; height:auto;}
+
+/* ---- confetti ---- */
+.cf{position:fixed; top:-40px; z-index:99; pointer-events:none; animation:fall 1.9s linear forwards;}
+@keyframes fall{to{transform:translateY(108vh) rotate(600deg); opacity:.5;}}
+
+@media (max-width:620px){
+  .bubble p{font-size:19px;}
+  .blank{min-width:46px; height:46px; font-size:24px;}
+  .hs{grid-template-columns:36px 52px 52px 52px;}
+  .hs .blank{width:50px; height:52px;}
+  .hs .blank.memo{width:50px;}
+  .hc{height:52px; font-size:30px;}
+  .pad{grid-template-columns:repeat(6,minmax(44px,54px));}
+  .pad button{height:52px; font-size:22px;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <button id="homeBtn" class="hbtn">🏠 ホーム</button>
+  <h1>🌊 おはなしさんすう</h1>
+  <div id="stars">⭐ 0</div>
+</header>
+
+<!-- =============== HOME =============== -->
+<main id="scr-home" class="screen">
+  <p class="lead">がくねんを えらんで ね</p>
+  <div class="cards">
+    <button class="card" id="goG1">
+      <span class="big">🐬 1ねんせい</span>
+      <span class="emoji">🦀 🐦 ⛵</span>
+      <span class="desc">うみの えを みて<br>おはなしと しきを つくろう</span>
+    </button>
+    <button class="card c2" id="goG2">
+      <span class="big">✏️ 2ねんせい</span>
+      <span class="emoji">🐚 ➕ ➖</span>
+      <span class="desc">おはなしを よんで<br>ひっさんで けいさんしよう</span>
+    </button>
+  </div>
+</main>
+
+<!-- =============== GRADE 1 =============== -->
+<main id="scr-g1" class="screen hidden">
+  <div class="toolbar">
+    <button class="chip op1" data-op="add">➕ たしざん</button>
+    <button class="chip op1" data-op="sub">➖ ひきざん</button>
+    <button class="chip new" id="g1New">🔄 あたらしい もんだい</button>
+  </div>
+
+  <div id="g1Scene" class="scene"></div>
+  <p class="hint">👆 えを タップすると ばんごうが ついて かぞえやすいよ</p>
+
+  <section class="panel scope" id="g1StoryPanel">
+    <h2>① おはなしを つくろう（▢に かずを いれてね）</h2>
+    <div class="bubble">
+      <button class="speak" id="g1Speak">🔊</button>
+      <p id="g1Story"></p>
+    </div>
+    <button class="check" id="g1StoryCheck">📝 まるつけ</button>
+  </section>
+
+  <section class="panel scope hidden" id="g1ShikiPanel">
+    <h2>② しきを つくろう</h2>
+    <div class="shiki" id="g1Shiki"></div>
+    <button class="check" id="g1ShikiCheck">✅ まるつけ</button>
+  </section>
+
+  <div id="g1Answer" class="answer hidden"></div>
+  <div id="g1Feedback" class="feedback"></div>
+  <div id="g1Pad" class="pad"></div>
+  <button id="g1Next" class="nextbtn hidden">➡️ つぎの もんだい</button>
+</main>
+
+<!-- =============== GRADE 2 =============== -->
+<main id="scr-g2" class="screen hidden">
+  <div class="toolbar">
+    <span class="tlabel">けいさん:</span>
+    <button class="chip op2" data-op="+">➕ たしざん</button>
+    <button class="chip op2" data-op="-">➖ ひきざん</button>
+    <button class="chip op2" data-op="mix">🎲 ミックス</button>
+  </div>
+  <div class="toolbar">
+    <span class="tlabel">くりあがり・くりさがり:</span>
+    <button class="chip cr2" data-cr="no">🍃 なし</button>
+    <button class="chip cr2" data-cr="yes">🔥 あり</button>
+    <button class="chip cr2" data-cr="mix">🎲 ミックス</button>
+    <button class="chip new" id="g2New">🔄 あたらしい もんだい</button>
+  </div>
+
+  <section class="panel">
+    <h2>① おはなしを よもう</h2>
+    <div class="bubble">
+      <button class="speak" id="g2Speak">🔊</button>
+      <p id="g2Story"></p>
+    </div>
+    <div id="g2Blocks" class="blocks"></div>
+  </section>
+
+  <section class="panel scope" id="g2ShikiPanel">
+    <h2>② しきを つくろう（かずと ＋−を えらんでね）</h2>
+    <div class="shiki">
+      <button class="blank" data-blank="sa" data-len="2"></button>
+      <button class="opsel" data-o="+">＋</button>
+      <button class="opsel" data-o="-">−</button>
+      <button class="blank" data-blank="sb" data-len="2"></button>
+      <span class="opsign">＝</span>
+      <span id="g2Eq" style="font-weight:bold; color:#d23369;">？</span>
+    </div>
+    <button class="check" id="g2ShikiCheck">✅ まるつけ</button>
+  </section>
+
+  <section class="panel scope hidden" id="g2HissanPanel">
+    <h2>③ ひっさんで とこう</h2>
+    <div id="g2Hissan" class="hs"></div>
+    <p class="hint small">むらさきの ▢は くりあがり・くりさがりの メモに つかえるよ（まるつけには はいらないよ）</p>
+    <button class="check" id="g2HissanCheck">✅ まるつけ</button>
+  </section>
+
+  <div id="g2Answer" class="answer hidden"></div>
+  <div id="g2Feedback" class="feedback"></div>
+  <div id="g2Pad" class="pad"></div>
+  <button id="g2Next" class="nextbtn hidden">➡️ つぎの もんだい</button>
+</main>
+
+<!-- =============== エリカせんせい =============== -->
+<div id="ovl" class="ovl hidden">
+  <div class="ovlcard">
+    <div class="erika">
+      <svg id="svgErika" viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg" aria-label="エリカせんせい">
+        <!-- うしろの かみ(あかみのある ちゃいろ) -->
+        <path d="M100 16 C 52 16 34 56 36 100 C 37 142 32 174 24 196 C 44 210 76 210 90 200 L 110 200 C 124 210 156 210 176 196 C 168 174 163 142 164 100 C 166 56 148 16 100 16 Z" fill="#6e422c"/>
+        <path d="M42 120 C 40 150 36 176 30 192 C 40 199 52 201 62 199 C 55 172 52 144 53 118 Z" fill="#835039" opacity=".8"/>
+        <path d="M158 120 C 160 150 164 176 170 192 C 160 199 148 201 138 199 C 145 172 148 144 147 118 Z" fill="#835039" opacity=".8"/>
+        <!-- からだ:しろい Tシャツ -->
+        <path d="M50 240 C 50 198 70 178 100 178 C 130 178 150 198 150 240 Z" fill="#ffffff"/>
+        <path d="M50 240 C 50 198 70 178 100 178 C 130 178 150 198 150 240" fill="none" stroke="#e4e4e4" stroke-width="2"/>
+        <!-- ミントグリーンの ベスト(まえあき) -->
+        <path d="M50 240 C 50 200 66 182 88 179 C 84 200 82 220 82 240 Z" fill="#a8e6d7"/>
+        <path d="M150 240 C 150 200 134 182 112 179 C 116 200 118 220 118 240 Z" fill="#a8e6d7"/>
+        <path d="M88 179 C 84 200 82 220 82 240" fill="none" stroke="#7fcdbb" stroke-width="2.5"/>
+        <path d="M112 179 C 116 200 118 220 118 240" fill="none" stroke="#7fcdbb" stroke-width="2.5"/>
+        <!-- くび -->
+        <path d="M90 144 L 110 144 L 110 172 C 110 178 90 178 90 172 Z" fill="#ffd9bd"/>
+        <!-- みみ と パールの イヤリング -->
+        <circle cx="53" cy="104" r="10" fill="#ffdfc8"/>
+        <circle cx="147" cy="104" r="10" fill="#ffdfc8"/>
+        <circle cx="53" cy="116" r="5" fill="#f6ecd8" stroke="#cbb98f" stroke-width="1.3"/>
+        <circle cx="51.5" cy="114.5" r="1.6" fill="#fff"/>
+        <circle cx="147" cy="116" r="5" fill="#f6ecd8" stroke="#cbb98f" stroke-width="1.3"/>
+        <circle cx="145.5" cy="114.5" r="1.6" fill="#fff"/>
+        <!-- かお -->
+        <path d="M55 92 C 55 60 72 44 100 44 C 128 44 145 60 145 92 C 145 122 128 148 100 148 C 72 148 55 122 55 92 Z" fill="#ffe4ce"/>
+        <!-- まえがみ(ひだりわけ) -->
+        <path d="M100 16 C 52 16 38 54 42 92 C 56 90 74 84 84 60 C 82 78 76 88 68 96 C 60 88 56 90 42 92 L 42 96 C 48 92 56 92 62 98 C 78 90 88 74 92 56 C 100 78 128 90 158 92 C 162 54 148 16 100 16 Z" fill="#7d4b33"/>
+        <path d="M92 56 C 100 78 128 90 158 92 C 160 72 154 40 132 26 C 148 44 150 70 148 84 C 124 80 102 72 92 56 Z" fill="#916048" opacity=".7"/>
+        <!-- かみの サイドの たば -->
+        <path d="M44 90 C 38 130 42 162 52 188 C 59 193 69 193 74 187 C 64 158 59 126 62 96 C 55 96 49 94 44 90 Z" fill="#7d4b33"/>
+        <path d="M156 90 C 162 130 158 162 148 188 C 141 193 131 193 126 187 C 136 158 141 126 138 96 C 145 96 151 94 156 90 Z" fill="#7d4b33"/>
+        <path d="M52 110 C 50 140 52 162 58 182" fill="none" stroke="#916048" stroke-width="2.5" stroke-linecap="round" opacity=".6"/>
+        <path d="M148 110 C 150 140 148 162 142 182" fill="none" stroke="#916048" stroke-width="2.5" stroke-linecap="round" opacity=".6"/>
+        <!-- まゆげ -->
+        <path d="M67 82 Q 78 75 90 80" fill="none" stroke="#6f4a2f" stroke-width="3.2" stroke-linecap="round"/>
+        <path d="M110 80 Q 122 75 133 82" fill="none" stroke="#6f4a2f" stroke-width="3.2" stroke-linecap="round"/>
+        <!-- め(おおきくて まるい ちゃいろの ひとみ) -->
+        <g>
+          <ellipse cx="79" cy="100" rx="10" ry="11" fill="#fff"/>
+          <circle cx="79" cy="101" r="7.5" fill="#5b3620"/>
+          <circle cx="79" cy="101" r="4" fill="#2a1608"/>
+          <circle cx="76" cy="97" r="2.8" fill="#fff"/>
+          <circle cx="82" cy="104" r="1.3" fill="#fff" opacity=".9"/>
+          <path d="M68 94 Q 79 87 90 94" fill="none" stroke="#4a2c1a" stroke-width="2.6" stroke-linecap="round"/>
+        </g>
+        <g>
+          <ellipse cx="121" cy="100" rx="10" ry="11" fill="#fff"/>
+          <circle cx="121" cy="101" r="7.5" fill="#5b3620"/>
+          <circle cx="121" cy="101" r="4" fill="#2a1608"/>
+          <circle cx="118" cy="97" r="2.8" fill="#fff"/>
+          <circle cx="124" cy="104" r="1.3" fill="#fff" opacity=".9"/>
+          <path d="M110 94 Q 121 87 132 94" fill="none" stroke="#4a2c1a" stroke-width="2.6" stroke-linecap="round"/>
+        </g>
+        <!-- はな -->
+        <path d="M100 111 q 3.5 4 0 8" fill="none" stroke="#eab392" stroke-width="2.4" stroke-linecap="round"/>
+        <!-- くち(はを みせた にっこり) -->
+        <path d="M83 124 Q 100 144 117 124 Q 100 131 83 124 Z" fill="#c9564f"/>
+        <path d="M87 125 Q 100 133.5 113 125 Q 100 129 87 125 Z" fill="#ffffff"/>
+        <!-- ほっぺ -->
+        <ellipse cx="68" cy="114" rx="8.5" ry="5" fill="#ffb3a0" opacity=".5"/>
+        <ellipse cx="132" cy="114" rx="8.5" ry="5" fill="#ffb3a0" opacity=".5"/>
+      </svg>
+      <svg id="svgAyu" class="hidden" viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg" aria-label="アユせんせい">
+        <!-- うしろの かみ(みじかめの ボブ・あたたかい ちゃいろ) -->
+        <path d="M100 16 C 54 16 36 54 38 96 C 39 120 42 140 50 152 C 58 162 76 164 84 158 L 116 158 C 124 164 142 162 150 152 C 158 140 161 120 162 96 C 164 54 146 16 100 16 Z" fill="#74452a"/>
+        <!-- からだ:グレーの ワンピース -->
+        <path d="M50 240 C 50 198 70 178 100 178 C 130 178 150 198 150 240 Z" fill="#85868c"/>
+        <path d="M62 208 C 80 218 120 218 138 208" fill="none" stroke="#6e6f75" stroke-width="2"/>
+        <!-- フリルそで -->
+        <circle cx="57" cy="198" r="12" fill="#97989e"/>
+        <circle cx="52" cy="214" r="12" fill="#97989e"/>
+        <circle cx="50" cy="231" r="12" fill="#97989e"/>
+        <circle cx="143" cy="198" r="12" fill="#97989e"/>
+        <circle cx="148" cy="214" r="12" fill="#97989e"/>
+        <circle cx="150" cy="231" r="12" fill="#97989e"/>
+        <path d="M62 190 C 54 202 51 218 52 236" fill="none" stroke="#7a7b81" stroke-width="2" stroke-linecap="round"/>
+        <path d="M138 190 C 146 202 149 218 148 236" fill="none" stroke="#7a7b81" stroke-width="2" stroke-linecap="round"/>
+        <!-- くび -->
+        <path d="M90 144 L 110 144 L 110 172 C 110 178 90 178 90 172 Z" fill="#ffd9bd"/>
+        <!-- あおい ネームストラップ -->
+        <path d="M80 184 L 97 214" stroke="#3b6fd0" stroke-width="5" stroke-linecap="round"/>
+        <path d="M120 184 L 103 214" stroke="#3b6fd0" stroke-width="5" stroke-linecap="round"/>
+        <rect x="86" y="212" width="28" height="20" rx="3" fill="#ffffff" stroke="#c9c9c9" stroke-width="1.5"/>
+        <circle cx="93" cy="219" r="3.2" fill="#f5a3b5"/>
+        <path d="M99 218 L 110 218 M90 226 L 110 226" stroke="#b9b9b9" stroke-width="1.6" stroke-linecap="round"/>
+        <!-- かお -->
+        <path d="M55 92 C 55 60 72 44 100 44 C 128 44 145 60 145 92 C 145 122 128 148 100 148 C 72 148 55 122 55 92 Z" fill="#ffe4ce"/>
+        <!-- まえがみ(シースルーバング: すきまから おでこが みえる) -->
+        <path d="M100 16 C 54 16 40 52 42 92 C 48 93 53 84 55 66 C 66 50 134 50 145 66 C 147 84 152 93 158 92 C 160 52 146 16 100 16 Z" fill="#8a5638"/>
+        <path d="M63 58 C 62 68 60 76 56 84 C 63 78 66 68 68 57 Z" fill="#8a5638"/>
+        <path d="M78 52 C 77 64 75 74 72 82 C 79 75 82 64 84 52 Z" fill="#8a5638"/>
+        <path d="M94 50 C 93 62 91 72 88 80 C 95 73 98 62 100 50 Z" fill="#8a5638"/>
+        <path d="M110 50 C 109 62 107 72 104 80 C 111 73 114 62 116 50 Z" fill="#8a5638"/>
+        <path d="M126 52 C 125 64 123 74 120 82 C 127 75 130 64 132 53 Z" fill="#8a5638"/>
+        <path d="M140 58 C 139 68 137 76 134 84 C 141 78 144 68 145 58 Z" fill="#8a5638"/>
+        <path d="M120 28 C 138 38 146 58 146 72" fill="none" stroke="#a06a48" stroke-width="2.5" stroke-linecap="round" opacity=".6"/>
+        <!-- サイドの ボブの たば(あごの うえで うちまき・みじかめ) -->
+        <path d="M44 88 C 38 118 40 140 50 156 C 57 163 67 162 71 154 C 63 136 60 112 63 92 C 56 95 49 93 44 88 Z" fill="#8a5638"/>
+        <path d="M156 88 C 162 118 160 140 150 156 C 143 163 133 162 129 154 C 137 136 140 112 137 92 C 144 95 151 93 156 88 Z" fill="#8a5638"/>
+        <path d="M52 106 C 50 126 52 142 58 154" fill="none" stroke="#a06a48" stroke-width="2.5" stroke-linecap="round" opacity=".6"/>
+        <path d="M148 106 C 150 126 148 142 142 154" fill="none" stroke="#a06a48" stroke-width="2.5" stroke-linecap="round" opacity=".6"/>
+        <!-- まゆげ -->
+        <path d="M67 82 Q 78 75 90 80" fill="none" stroke="#6f4a2f" stroke-width="3.2" stroke-linecap="round"/>
+        <path d="M110 80 Q 122 75 133 82" fill="none" stroke="#6f4a2f" stroke-width="3.2" stroke-linecap="round"/>
+        <!-- め(おおきくて まるい ちゃいろの ひとみ) -->
+        <g>
+          <ellipse cx="79" cy="100" rx="10" ry="11" fill="#fff"/>
+          <circle cx="79" cy="101" r="7.5" fill="#5b3620"/>
+          <circle cx="79" cy="101" r="4" fill="#2a1608"/>
+          <circle cx="76" cy="97" r="2.8" fill="#fff"/>
+          <circle cx="82" cy="104" r="1.3" fill="#fff" opacity=".9"/>
+          <path d="M68 94 Q 79 87 90 94" fill="none" stroke="#4a2c1a" stroke-width="2.6" stroke-linecap="round"/>
+        </g>
+        <g>
+          <ellipse cx="121" cy="100" rx="10" ry="11" fill="#fff"/>
+          <circle cx="121" cy="101" r="7.5" fill="#5b3620"/>
+          <circle cx="121" cy="101" r="4" fill="#2a1608"/>
+          <circle cx="118" cy="97" r="2.8" fill="#fff"/>
+          <circle cx="124" cy="104" r="1.3" fill="#fff" opacity=".9"/>
+          <path d="M110 94 Q 121 87 132 94" fill="none" stroke="#4a2c1a" stroke-width="2.6" stroke-linecap="round"/>
+        </g>
+        <!-- はな -->
+        <path d="M100 111 q 3.5 4 0 8" fill="none" stroke="#eab392" stroke-width="2.4" stroke-linecap="round"/>
+        <!-- くち(はを みせた にっこり) -->
+        <path d="M83 124 Q 100 144 117 124 Q 100 131 83 124 Z" fill="#c9564f"/>
+        <path d="M87 125 Q 100 133.5 113 125 Q 100 129 87 125 Z" fill="#ffffff"/>
+        <!-- ほっぺ -->
+        <ellipse cx="68" cy="114" rx="8.5" ry="5" fill="#ffb3a0" opacity=".5"/>
+        <ellipse cx="132" cy="114" rx="8.5" ry="5" fill="#ffb3a0" opacity=".5"/>
+      </svg>
+    </div>
+    <div id="ovlMedal" class="hidden"><span class="medalbig">🥇</span></div>
+    <div class="ovlname" id="ovlName">エリカせんせい</div>
+    <div id="ovlMsg" class="ovlmsg"></div>
+    <button id="ovlBtn" class="ovlbtn">がんばるぞ！</button>
+  </div>
+</div>
+
+<script>
+// ================= utils =================
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const rnd = (min,max) => min + Math.floor(Math.random()*(max-min+1));
+const shuffle = a => { a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+
+let audioCtx=null;
+function beep(f,d,t0,type,v){
+  try{
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.type=type||'sine'; o.frequency.value=f; o.connect(g); g.connect(audioCtx.destination);
+    const t=audioCtx.currentTime+(t0||0);
+    g.gain.setValueAtTime(v||.15,t); g.gain.exponentialRampToValueAtTime(.001,t+d);
+    o.start(t); o.stop(t+d);
+  }catch(e){}
+}
+const playGood = () => { beep(660,.15,0); beep(880,.3,.15); };
+const playBad  = () => { beep(200,.3,0,'triangle',.1); };
+
+function speak(t){
+  try{ speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(t); u.lang='ja-JP'; u.rate=.9;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+let stars = +(localStorage.getItem('ohanashiStars')||0);
+let medals = +(localStorage.getItem('ohanashiMedals')||0);
+let sessionCorrect = 0; // きょうの せいかいすう(3・7・10もんで エリカせんせい)
+function renderStars(){ $('#stars').textContent='⭐ '+stars+(medals>0?'　🥇 '+medals:''); }
+function addStar(){
+  stars++; localStorage.setItem('ohanashiStars',stars); renderStars();
+  onCorrect();
+}
+
+// ---- エリカせんせいの おうえん ----
+const ERIKA_MSG={
+  3:{msg:'3もん せいかい！すごいね！\nこのちょうしで がんばろう！', btn:'がんばるぞ！'},
+  7:{msg:'7もん せいかい！\nあと 3もんで きんメダルだよ！\nファイト！', btn:'がんばるぞ！'},
+  10:{msg:'10もん せいかい！\nよく がんばりました！\nきんメダルを あげます！\nおめでとう！！', btn:'やったー！'}
+};
+function onCorrect(){
+  sessionCorrect++;
+  if(sessionCorrect===3||sessionCorrect===7) showErika(sessionCorrect);
+  else if(sessionCorrect>=10){
+    medals++; localStorage.setItem('ohanashiMedals',medals); renderStars();
+    showErika(10);
+    sessionCorrect=0; // つぎの きんメダルに ちょうせん
+  }
+}
+function showErika(n){
+  const m=ERIKA_MSG[n];
+  const ayu = (n===10); // 10もんめの きんメダルは アユせんせいが とうじょう
+  $('#svgErika').classList.toggle('hidden', ayu);
+  $('#svgAyu').classList.toggle('hidden', !ayu);
+  $('#ovlName').textContent = ayu ? 'アユせんせい' : 'エリカせんせい';
+  $('#ovlMsg').innerHTML=m.msg.replace(/\n/g,'<br>');
+  $('#ovlBtn').textContent=m.btn;
+  $('#ovlMedal').classList.toggle('hidden', n!==10);
+  $('#ovl').classList.remove('hidden');
+  if(n===10){ beep(523,.15,0); beep(659,.15,.15); beep(784,.15,.3); beep(1047,.5,.45); confetti(); setTimeout(confetti,700); }
+  speak((ayu?'アユせんせいです。':'エリカせんせいです。')+m.msg.replace(/\n/g,''));
+}
+
+function confetti(){
+  const em=['🎉','⭐','🎊','✨'];
+  for(let i=0;i<26;i++){
+    const s=document.createElement('span'); s.className='cf'; s.textContent=em[i%4];
+    s.style.left=Math.random()*100+'vw';
+    s.style.animationDelay=(Math.random()*.4)+'s';
+    s.style.fontSize=(16+Math.random()*20)+'px';
+    document.body.appendChild(s); setTimeout(()=>s.remove(),2400);
+  }
+}
+
+// counters: 3びき / 1・6・8・10ぴき / それいがい ひき
+function suffix(type,n){
+  if(type==='hiki'){
+    if(n===3) return 'びき';
+    if([1,6,8,10].includes(n)) return 'ぴき';
+    return 'ひき';
+  }
+  if(type==='wa') return 'わ';
+  if(type==='mai') return 'まい';
+  if(type==='tou') return 'とう';
+  if(type==='sou') return 'そう';
+  return 'こ';
+}
+function nanC(type){
+  return type==='hiki'?'びき':type==='wa'?'わ':type==='mai'?'まい':type==='tou'?'とう':type==='sou'?'そう':'こ';
+}
+
+function show(id){ $$('.screen').forEach(s=>s.classList.add('hidden')); $(id).classList.remove('hidden'); }
+
+// ================= blank input system =================
+let activeBlank=null;
+function setActive(el){
+  $$('.blank.active').forEach(x=>x.classList.remove('active'));
+  activeBlank=el;
+  if(el) el.classList.add('active');
+}
+function blankEl(id){ return document.querySelector(`[data-blank="${id}"]`); }
+function blankVal(id){ const el=blankEl(id); return el && el.dataset.val ? el.dataset.val : ''; }
+
+function fillDigit(d){
+  const b=activeBlank;
+  if(!b || b.classList.contains('ok')) return;
+  const len=+(b.dataset.len||1);
+  let v=b.dataset.val||'';
+  if(len===1){ v=String(d); } else { v = v.length>=len ? String(d) : v+String(d); }
+  b.dataset.val=v; b.textContent=v; b.classList.remove('wrong');
+  // grade1 counter suffix follows the number (3びき / 4ひき ...)
+  if(b.dataset.ctr){
+    const c=b.nextElementSibling;
+    if(c && c.classList.contains('ctr')) c.textContent=suffix(b.dataset.ctr,+v);
+  }
+  if(v.length>=len && !b.classList.contains('memo')) advanceBlank(b);
+}
+function clearBlank(){
+  const b=activeBlank;
+  if(!b || b.classList.contains('ok')) return;
+  b.dataset.val=''; b.textContent=''; b.classList.remove('wrong');
+  if(b.dataset.ctr){
+    const c=b.nextElementSibling;
+    if(c && c.classList.contains('ctr')) c.textContent=nanC(b.dataset.ctr)==='びき'?'ひき':nanC(b.dataset.ctr);
+  }
+}
+function advanceBlank(cur){
+  const scope=cur.closest('.scope'); if(!scope) return;
+  const blanks=[...scope.querySelectorAll('.blank')]
+    .filter(x=>!x.classList.contains('ok') && !x.classList.contains('memo'));
+  blanks.sort((p,q)=>(+(p.dataset.ord||0))-(+(q.dataset.ord||0)));
+  const i=blanks.indexOf(cur);
+  for(let k=1;k<=blanks.length;k++){
+    const nb=blanks[(i+k)%blanks.length];
+    if(!(nb.dataset.val||'').length){ setActive(nb); return; }
+  }
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('.blank');
+  if(b && !b.classList.contains('ok')) setActive(b);
+});
+document.addEventListener('keydown',e=>{
+  if(/^[0-9]$/.test(e.key)) fillDigit(+e.key);
+  if(e.key==='Backspace'||e.key==='Delete') clearBlank();
+});
+
+function renderPad(el){
+  el.innerHTML='';
+  [1,2,3,4,5,6,7,8,9,0].forEach(d=>{
+    const b=document.createElement('button'); b.textContent=d;
+    b.onclick=()=>fillDigit(d); el.appendChild(b);
+  });
+  const del=document.createElement('button'); del.className='del'; del.textContent='⌫ けす';
+  del.onclick=clearBlank; el.appendChild(del);
+}
+
+function setFeedback(el,msg,good){
+  el.textContent=msg;
+  el.className='feedback '+(good?'good':'bad');
+}
+function blankHtml(id,opts){
+  opts=opts||{};
+  return `<button class="blank" data-blank="${id}" data-len="${opts.len||1}"`+
+    (opts.ctr?` data-ctr="${opts.ctr}"`:'')+(opts.ord?` data-ord="${opts.ord}"`:'')+`></button>`+
+    (opts.ctr?`<span class="ctr">${suffix(opts.ctr,null)}</span>`:'');
+}
+
+// ================= GRADE 1 =================
+const SLOTS={
+  sky:[[8,6],[24,4],[40,7],[56,3],[72,6],[86,5],[16,15],[48,14],[66,13],[32,12],[80,15],[5,16]],
+  jump:[[10,14],[26,11],[42,15],[58,11],[74,14],[88,12],[18,18],[50,18],[66,17],[34,19],[82,19],[5,19]],
+  sea:[[6,30],[20,34],[34,29],[48,33],[62,30],[76,34],[88,30],[12,41],[28,42],[44,40],[58,42],[72,41]],
+  beach:[[8,62],[22,58],[36,63],[50,58],[64,62],[78,58],[88,66],[14,74],[28,79],[42,73],[56,79],[70,74],[84,79],[6,85],[48,87],[32,89]]
+};
+const DECOS=[
+  {e:'☀️',x:91,y:2,s:32},{e:'☁️',x:16,y:1,s:28},{e:'☁️',x:56,y:0,s:24},
+  {e:'⛵',x:10,y:20,s:26},{e:'⛵',x:46,y:19,s:22},{e:'⛵',x:80,y:20,s:26},
+  {e:'🐚',x:4,y:91,s:17},{e:'🐚',x:62,y:92,s:15},{e:'🐚',x:93,y:87,s:17}
+];
+const G1_DEFS={
+  add:[
+    {id:'kani', name:'かに', ctr:'hiki', emoji:'🦀',
+     gA:{label:'ちいさい かに', size:20, zone:'beach'},
+     gB:{label:'おおきい かに', size:38, zone:'beach'}},
+    {id:'iruka', name:'いるか', ctr:'tou', emoji:'🐬',
+     gA:{label:'ジャンプして いる いるか', size:32, zone:'jump', rot:-25},
+     gB:{label:'およいで いる いるか', size:32, zone:'sea'}},
+    {id:'kamome1', name:'かもめ', ctr:'wa', emoji:'🐦',
+     gA:{label:'とんで いる かもめ', size:26, zone:'sky', rot:-15},
+     gB:{label:'すなはまに いる かもめ', size:28, zone:'beach'}},
+    {id:'yacht', name:'ヨット', ctr:'sou', emoji:'⛵', noDeco:'⛵', inanimate:true,
+     gA:{label:'ちいさい ヨット', size:22, zone:'sea'},
+     gB:{label:'おおきい ヨット', size:40, zone:'sea'}},
+    {id:'kai', name:'かい', ctr:'ko', emoji:'🐚', noDeco:'🐚', inanimate:true,
+     gA:{label:'ちいさい かい', size:18, zone:'beach'},
+     gB:{label:'おおきい かい', size:34, zone:'beach'}}
+  ],
+  sub:[
+    {id:'kamome', name:'かもめ', ctr:'wa', emoji:'🐦',
+     awayPhrase:'とんで いくと', stayZone:'beach', awayZone:'sky', puff:true, size:28},
+    {id:'kani2', name:'かに', ctr:'hiki', emoji:'🦀',
+     awayPhrase:'すなの あなに かくれると', stayZone:'beach', awayZone:'beach', hole:true, size:28},
+    {id:'iruka2', name:'いるか', ctr:'tou', emoji:'🐬',
+     awayPhrase:'うみに もぐると', stayZone:'sea', awayZone:'sea', puff:true, size:32},
+    {id:'yacht2', name:'ヨット', ctr:'sou', emoji:'⛵', noDeco:'⛵', inanimate:true,
+     awayPhrase:'みなとに かえると', stayZone:'sea', awayZone:'sea', puff:true, size:30},
+    {id:'kai2', name:'かい', ctr:'ko', emoji:'🐚', noDeco:'🐚', inanimate:true,
+     awayPhrase:'なみに ながされると', stayZone:'beach', awayZone:'sea', puff:true, size:26}
+  ]
+};
+const G1={op:'add', def:null, A:0, B:0, tapOrder:[]};
+
+function g1New(){
+  const defs=G1_DEFS[G1.op];
+  G1.def=defs[rnd(0,defs.length-1)];
+  if(G1.op==='add'){
+    G1.A=rnd(2,5); G1.B=rnd(2,Math.min(4,9-G1.A));
+  }else{
+    G1.A=rnd(5,9); G1.B=rnd(2,Math.min(4,G1.A-1)); // A=ぜんぶ B=いなくなる
+  }
+  G1.tapOrder=[];
+  g1RenderScene(); g1RenderStory();
+  $('#g1ShikiPanel').classList.add('hidden');
+  $('#g1Answer').classList.add('hidden');
+  $('#g1Next').classList.add('hidden');
+  $('#g1StoryPanel').classList.remove('hidden');
+  $('#g1StoryCheck').classList.remove('hidden');
+  $('#g1ShikiCheck').classList.remove('hidden');
+  setFeedback($('#g1Feedback'),'','');
+  setActive(blankEl('a'));
+}
+
+function g1Item(emoji,pos,size,extra){
+  extra=extra||{};
+  const b=document.createElement('button'); b.className='itm';
+  b.style.left=pos[0]+'%'; b.style.top=pos[1]+'%'; b.style.fontSize=size+'px';
+  let inner=`<span class="em"${extra.rot?` style="transform:rotate(${extra.rot}deg)"`:''}>${emoji}</span>`;
+  if(extra.hole) inner=`<span class="hole">🕳️</span>`+inner;
+  if(extra.puff) inner+=`<span class="puff">💨</span>`;
+  b.innerHTML=inner+`<span class="badge"></span>`;
+  b.onclick=()=>{
+    const i=G1.tapOrder.indexOf(b);
+    if(i>=0){ G1.tapOrder.splice(i,1); b.classList.remove('counted'); }
+    else G1.tapOrder.push(b);
+    G1.tapOrder.forEach((el,k)=>{ el.classList.add('counted'); el.querySelector('.badge').textContent=k+1; });
+    beep(520,.08,0,'sine',.06);
+  };
+  return b;
+}
+
+function g1RenderScene(){
+  const sc=$('#g1Scene'); sc.innerHTML='';
+  DECOS.filter(dd=>dd.e!==G1.def.noDeco).forEach(d=>{
+    const s=document.createElement('span'); s.className='deco';
+    s.style.left=d.x+'%'; s.style.top=d.y+'%'; s.style.fontSize=d.s+'px'; s.textContent=d.e;
+    sc.appendChild(s);
+  });
+  const pools={}; Object.keys(SLOTS).forEach(z=>pools[z]=shuffle(SLOTS[z]));
+  const d=G1.def;
+  if(G1.op==='add'){
+    for(let i=0;i<G1.A;i++) sc.appendChild(g1Item(d.emoji,pools[d.gA.zone].pop(),d.gA.size,{rot:d.gA.rot}));
+    for(let i=0;i<G1.B;i++) sc.appendChild(g1Item(d.emoji,pools[d.gB.zone].pop(),d.gB.size,{rot:d.gB.rot}));
+  }else{
+    const stay=G1.A-G1.B;
+    for(let i=0;i<stay;i++) sc.appendChild(g1Item(d.emoji,pools[d.stayZone].pop(),d.size,{}));
+    for(let i=0;i<G1.B;i++) sc.appendChild(g1Item(d.emoji,pools[d.awayZone].pop(),d.size,
+      {rot:d.puff?-25:0, puff:d.puff, hole:d.hole}));
+  }
+}
+
+function g1RenderStory(){
+  const d=G1.def;
+  const iru=d.inanimate?'あります':'います';
+  const iruQ=d.inanimate?'ありますか':'いますか';
+  let html;
+  if(G1.op==='add'){
+    html=`${d.gA.label}が ${blankHtml('a',{ctr:d.ctr})} ${iru}。<br>`+
+         `${d.gB.label}が ${blankHtml('b',{ctr:d.ctr})} ${iru}。<br>`+
+         `${d.name}は ぜんぶで なん${nanC(d.ctr)} ${iruQ}。`;
+  }else{
+    html=`${d.name}が ${blankHtml('a',{ctr:d.ctr})} ${iru}。<br>`+
+         `${blankHtml('b',{ctr:d.ctr})} ${d.awayPhrase}、<br>のこりは なん${nanC(d.ctr)}に なりますか。`;
+  }
+  $('#g1Story').innerHTML=html;
+}
+
+function g1SpeakText(){
+  const d=G1.def;
+  const iru=d.inanimate?'あります':'います';
+  const iruQ=d.inanimate?'ありますか':'いますか';
+  const va=blankVal('a'), vb=blankVal('b');
+  const w=(v,ctr)=> v? v+suffix(ctr,+v) : 'いくつ';
+  if(G1.op==='add')
+    return `${d.gA.label}が ${w(va,d.ctr)} ${iru}。${d.gB.label}が ${w(vb,d.ctr)} ${iru}。${d.name}は ぜんぶで なん${nanC(d.ctr)} ${iruQ}。`;
+  return `${d.name}が ${w(va,d.ctr)} ${iru}。${w(vb,d.ctr)} ${d.awayPhrase}、のこりは なん${nanC(d.ctr)}に なりますか。`;
+}
+
+function g1CheckStory(){
+  const va=blankVal('a'), vb=blankVal('b');
+  const fb=$('#g1Feedback');
+  if(va===''||vb===''){ setFeedback(fb,'▢に かずを いれてね 👆',false); return; }
+  let ok=true;
+  if(+va!==G1.A){ blankEl('a').classList.add('wrong'); ok=false; }
+  if(+vb!==G1.B){ blankEl('b').classList.add('wrong'); ok=false; }
+  if(!ok){ playBad(); setFeedback(fb,'もういちど ゆっくり かぞえて みよう 🔍',false); return; }
+  playGood();
+  ['a','b'].forEach(id=>blankEl(id).classList.add('ok'));
+  $('#g1StoryCheck').classList.add('hidden');
+  setFeedback(fb,'おはなしが できたね！こんどは しきだよ ✏️',true);
+  // build equation
+  const op=G1.op==='add'?'＋':'−';
+  $('#g1Shiki').innerHTML=
+    blankHtml('e1',{ord:1})+`<span class="opsign">${op}</span>`+
+    blankHtml('e2',{ord:2})+`<span class="opsign">＝</span>`+blankHtml('e3',{ord:3});
+  $('#g1ShikiPanel').classList.remove('hidden');
+  setActive(blankEl('e1'));
+}
+
+function g1CheckShiki(){
+  const fb=$('#g1Feedback');
+  const v1=blankVal('e1'), v2=blankVal('e2'), v3=blankVal('e3');
+  if(v1===''||v2===''||v3===''){ setFeedback(fb,'しきの ▢を ぜんぶ うめてね 👆',false); return; }
+  const n1=+v1,n2=+v2,n3=+v3;
+  let ok, ans;
+  if(G1.op==='add'){
+    ans=G1.A+G1.B;
+    ok=((n1===G1.A&&n2===G1.B)||(n1===G1.B&&n2===G1.A)) && n3===ans;
+  }else{
+    ans=G1.A-G1.B;
+    ok=(n1===G1.A&&n2===G1.B&&n3===ans);
+  }
+  if(!ok){
+    playBad();
+    if(G1.op==='add'){
+      if(!((n1===G1.A&&n2===G1.B)||(n1===G1.B&&n2===G1.A))){ blankEl('e1').classList.add('wrong'); blankEl('e2').classList.add('wrong'); }
+      if(n3!==ans) blankEl('e3').classList.add('wrong');
+    }else{
+      if(n1!==G1.A) blankEl('e1').classList.add('wrong');
+      if(n2!==G1.B) blankEl('e2').classList.add('wrong');
+      if(n3!==ans) blankEl('e3').classList.add('wrong');
+    }
+    setFeedback(fb,'おしい！おはなしを もういちど みて みよう 🤔',false);
+    return;
+  }
+  ['e1','e2','e3'].forEach(id=>blankEl(id).classList.add('ok'));
+  const d=G1.def;
+  const word=G1.op==='add'?'ぜんぶで':'のこりは';
+  $('#g1Answer').textContent=`こたえ　${word} ${ans}${suffix(d.ctr,ans)} 🎉`;
+  $('#g1Answer').classList.remove('hidden');
+  $('#g1ShikiCheck').classList.add('hidden');
+  setFeedback(fb,'せいかい！すごい！ 💮',true);
+  playGood(); confetti(); addStar();
+  $('#g1Next').classList.remove('hidden');
+}
+
+// ================= GRADE 2 =================
+const G2_CTX=[
+  {e:'🐚', name:'かい', u:'こ',
+   add:(a,b)=>`かいを ${a}こ ひろいました。あとから ${b}こ ひろいました。ぜんぶで なんこに なりましたか。`,
+   sub:(a,b)=>`かいが ${a}こ あります。ともだちに ${b}こ あげました。のこりは なんこに なりましたか。`,
+   lose:'あげた'},
+  {e:'🌰', name:'どんぐり', u:'こ',
+   add:(a,b)=>`どんぐりを ${a}こ ひろいました。あとから ${b}こ ひろいました。ぜんぶで なんこに なりましたか。`,
+   sub:(a,b)=>`どんぐりが ${a}こ あります。こうさくで ${b}こ つかいました。のこりは なんこに なりましたか。`,
+   lose:'つかった'},
+  {e:'🍬', name:'あめ', u:'こ',
+   add:(a,b)=>`あめが ${a}こ あります。おかあさんに ${b}こ もらいました。ぜんぶで なんこに なりましたか。`,
+   sub:(a,b)=>`あめが ${a}こ あります。みんなで ${b}こ たべました。のこりは なんこに なりましたか。`,
+   lose:'たべた'},
+  {e:'⭐', name:'シール', u:'まい',
+   add:(a,b)=>`シールが ${a}まい あります。せんせいに ${b}まい もらいました。ぜんぶで なんまいに なりましたか。`,
+   sub:(a,b)=>`シールが ${a}まい あります。${b}まい つかいました。のこりは なんまいに なりましたか。`,
+   lose:'つかった'},
+  {e:'📄', name:'おりがみ', u:'まい',
+   add:(a,b)=>`おりがみが ${a}まい あります。${b}まい かって もらいました。ぜんぶで なんまいに なりましたか。`,
+   sub:(a,b)=>`おりがみが ${a}まい あります。つるを おるのに ${b}まい つかいました。のこりは なんまいに なりましたか。`,
+   lose:'つかった'}
+];
+const G2={opSet:'+', crSet:'no', op:'+', a:0, b:0, ctx:null, story:''};
+
+function g2Gen(){
+  G2.op = G2.opSet==='mix' ? (Math.random()<.5?'+':'-') : G2.opSet;
+  const carry = G2.crSet==='mix' ? Math.random()<.5 : G2.crSet==='yes';
+  let a1,b1,a10,b10;
+  if(G2.op==='+'){
+    if(carry){ a1=rnd(1,9); b1=rnd(Math.max(1,10-a1),9); a10=rnd(1,9); b10=rnd(1,9); }
+    else{ a1=rnd(0,9); b1=rnd(0,9-a1); a10=rnd(1,8); b10=rnd(1,9-a10); }
+  }else{
+    if(carry){ a1=rnd(0,8); b1=rnd(a1+1,9); a10=rnd(3,9); b10=rnd(1,a10-2); }
+    else{ a1=rnd(1,9); b1=rnd(0,a1); a10=rnd(2,9); b10=rnd(1,a10-1); }
+  }
+  G2.a=a10*10+a1; G2.b=b10*10+b1;
+  G2.ctx=G2_CTX[rnd(0,G2_CTX.length-1)];
+}
+
+function g2BlocksHtml(n,color,label){
+  const tens=Math.floor(n/10), ones=n%10;
+  let h=`<div class="bgroup"><div class="blabel">${label}</div><div class="brow" style="--bc:${color}">`;
+  for(let i=0;i<tens;i++) h+=`<div class="tenbar" style="--bc:${color}"></div>`;
+  if(ones){ h+=`<div class="ones">`; for(let i=0;i<ones;i++) h+=`<div class="onecube" style="--bc:${color}"></div>`; h+=`</div>`; }
+  h+=`</div></div>`;
+  return h;
+}
+
+function g2New(){
+  g2Gen();
+  const c=G2.ctx;
+  G2.story = G2.op==='+' ? c.add(G2.a,G2.b) : c.sub(G2.a,G2.b);
+  $('#g2Story').textContent=c.e+' '+G2.story;
+  // blocks
+  let bh;
+  if(G2.op==='+'){
+    bh=g2BlocksHtml(G2.a,'#f5a04a',`はじめ ${G2.a}${c.u}`)+`<div class="bplus">＋</div>`+
+       g2BlocksHtml(G2.b,'#5db4e8',`あとから ${G2.b}${c.u}`);
+  }else{
+    bh=g2BlocksHtml(G2.a,'#f5a04a',`ぜんぶで ${G2.a}${c.u}`)+
+       `<div class="bminus">➖ ${G2.b}${c.u} ${c.lose} ${c.e}💨</div>`;
+  }
+  $('#g2Blocks').innerHTML=bh;
+  // reset shiki
+  ['sa','sb'].forEach(id=>{ const el=blankEl(id); el.classList.remove('ok','wrong'); el.dataset.val=''; el.textContent=''; });
+  $$('.opsel').forEach(o=>o.classList.remove('sel','ok','wrong'));
+  g2OpSel=null;
+  $('#g2Eq').textContent='？';
+  $('#g2ShikiCheck').classList.remove('hidden');
+  $('#g2HissanCheck').classList.remove('hidden');
+  $('#g2HissanPanel').classList.add('hidden');
+  $('#g2Answer').classList.add('hidden');
+  $('#g2Next').classList.add('hidden');
+  setFeedback($('#g2Feedback'),'','');
+  setActive(blankEl('sa'));
+}
+
+let g2OpSel=null;
+$$('.opsel').forEach(btn=>{
+  btn.onclick=()=>{
+    if(btn.classList.contains('ok')) return;
+    $$('.opsel').forEach(o=>o.classList.remove('sel','wrong'));
+    btn.classList.add('sel'); g2OpSel=btn.dataset.o;
+    beep(520,.08,0,'sine',.06);
+  };
+});
+
+function g2CheckShiki(){
+  const fb=$('#g2Feedback');
+  const va=blankVal('sa'), vb=blankVal('sb');
+  if(va===''||vb===''){ setFeedback(fb,'▢に おはなしの かずを いれてね 👆',false); return; }
+  if(!g2OpSel){ setFeedback(fb,'＋か −を えらんでね 👆',false); return; }
+  let ok=true;
+  if(+va!==G2.a){ blankEl('sa').classList.add('wrong'); ok=false; }
+  if(+vb!==G2.b){ blankEl('sb').classList.add('wrong'); ok=false; }
+  if(g2OpSel!==G2.op){ $$('.opsel').forEach(o=>{if(o.classList.contains('sel'))o.classList.add('wrong');}); ok=false; }
+  if(!ok){ playBad(); setFeedback(fb,'おはなしを もういちど よんで みよう 🔍',false); return; }
+  playGood();
+  ['sa','sb'].forEach(id=>blankEl(id).classList.add('ok'));
+  $$('.opsel').forEach(o=>{ if(o.dataset.o===G2.op) o.classList.add('ok'); });
+  $('#g2ShikiCheck').classList.add('hidden');
+  setFeedback(fb,'しきが できたね！つぎは ひっさんだよ ✏️',true);
+  g2BuildHissan();
+  $('#g2HissanPanel').classList.remove('hidden');
+  setActive(blankEl('r_o'));
+}
+
+function g2BuildHissan(){
+  const a10=Math.floor(G2.a/10), a1=G2.a%10, b10=Math.floor(G2.b/10), b1=G2.b%10;
+  const sum=G2.op==='+'?G2.a+G2.b:G2.a-G2.b;
+  const needH=sum>=100;
+  const memo=id=>`<div class="memocell"><button class="blank memo" data-blank="${id}" data-len="2"></button></div>`;
+  let h='';
+  // memo row: add → carry boxes above hundreds+tens / sub → regroup boxes above tens+ones
+  if(G2.op==='+') h+=`<div></div>${memo('m_h')}${memo('m_t')}<div></div>`;
+  else            h+=`<div></div><div></div>${memo('m_t')}${memo('m_o')}`;
+  h+=`<div class="hc"></div><div class="hc"></div><div class="hc">${a10}</div><div class="hc">${a1}</div>`;
+  h+=`<div class="hc opc">${G2.op==='+'?'＋':'−'}</div><div class="hc"></div><div class="hc">${b10}</div><div class="hc">${b1}</div>`;
+  h+=`<div class="hsline"></div>`;
+  h+=`<div class="hc"></div>`+
+     (needH?`<div class="hc" style="display:flex;justify-content:center">${blankHtml('r_h',{ord:3})}</div>`:`<div class="hc"></div>`)+
+     `<div class="hc" style="display:flex;justify-content:center">${blankHtml('r_t',{ord:2})}</div>`+
+     `<div class="hc" style="display:flex;justify-content:center">${blankHtml('r_o',{ord:1})}</div>`;
+  $('#g2Hissan').innerHTML=h;
+}
+
+function g2CheckHissan(){
+  const fb=$('#g2Feedback');
+  const sum=G2.op==='+'?G2.a+G2.b:G2.a-G2.b;
+  const dO=sum%10, dT=Math.floor(sum/10)%10, dH=Math.floor(sum/100);
+  const cells=[['r_o',dO],['r_t',dT]];
+  if(dH>0) cells.push(['r_h',dH]);
+  let empty=false, ok=true;
+  cells.forEach(([id,want])=>{
+    const v=blankVal(id);
+    if(v===''){ empty=true; return; }
+    if(+v!==want){ blankEl(id).classList.add('wrong'); ok=false; }
+  });
+  if(empty){ setFeedback(fb,'こたえの ▢を ぜんぶ うめてね（いちのくらいから！）👆',false); return; }
+  if(!ok){ playBad(); setFeedback(fb,'おしい！くらいに きをつけて もういちど 🤔',false); return; }
+  cells.forEach(([id])=>blankEl(id).classList.add('ok'));
+  $('#g2Eq').textContent=sum;
+  $('#g2Answer').textContent=`こたえ　${sum}${G2.ctx.u} 🎉`;
+  $('#g2Answer').classList.remove('hidden');
+  $('#g2HissanCheck').classList.add('hidden');
+  setFeedback(fb,'せいかい！ひっさん めいじん！ 💮',true);
+  playGood(); confetti(); addStar();
+  $('#g2Next').classList.remove('hidden');
+}
+
+// ================= wiring =================
+renderStars();
+renderPad($('#g1Pad'));
+renderPad($('#g2Pad'));
+
+$('#homeBtn').onclick=()=>show('#scr-home');
+$('#ovlBtn').onclick=()=>{ $('#ovl').classList.add('hidden'); try{speechSynthesis.cancel();}catch(e){} };
+$('#goG1').onclick=()=>{ show('#scr-g1'); g1New(); };
+$('#goG2').onclick=()=>{ show('#scr-g2'); g2New(); };
+
+$$('.op1').forEach(c=>c.onclick=()=>{
+  $$('.op1').forEach(x=>x.classList.remove('sel')); c.classList.add('sel');
+  G1.op=c.dataset.op; g1New();
+});
+document.querySelector('.op1[data-op="add"]').classList.add('sel');
+$('#g1New').onclick=g1New;
+$('#g1Next').onclick=g1New;
+$('#g1Speak').onclick=()=>speak(g1SpeakText());
+$('#g1StoryCheck').onclick=g1CheckStory;
+$('#g1ShikiCheck').onclick=g1CheckShiki;
+
+$$('.op2').forEach(c=>c.onclick=()=>{
+  $$('.op2').forEach(x=>x.classList.remove('sel')); c.classList.add('sel');
+  G2.opSet=c.dataset.op; g2New();
+});
+$$('.cr2').forEach(c=>c.onclick=()=>{
+  $$('.cr2').forEach(x=>x.classList.remove('sel')); c.classList.add('sel');
+  G2.crSet=c.dataset.cr; g2New();
+});
+document.querySelector('.op2[data-op="+"]').classList.add('sel');
+document.querySelector('.cr2[data-cr="no"]').classList.add('sel');
+$('#g2New').onclick=g2New;
+$('#g2Next').onclick=g2New;
+$('#g2Speak').onclick=()=>speak(G2.story);
+$('#g2ShikiCheck').onclick=g2CheckShiki;
+$('#g2HissanCheck').onclick=g2CheckHissan;
+
+window.DBG={G1,G2};
+</script>
+</body>
+</html>
